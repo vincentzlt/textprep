@@ -21,5 +21,7 @@ A general toolkit developed for analyzing text, with a focus on Japanese, Chines
 Moses, the machine translation system. Mainly the preprocessing script is used. (should pay attention to script path when use it)
 - [SentencePiece](https://github.com/google/sentencepiece)<br/>
 Unsupervised text tokenizer for Neural Network-based text generation.
+- [tqdm](https://github.com/tqdm/tqdm)<br/>
+  handle progress bars
 
 ## usage
