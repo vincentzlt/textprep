@@ -16,6 +16,8 @@ Yet Another Part-of-Speech and Morphological Analyzer (doc in Japanese)
 - [Kytea](http://www.phontron.com/kytea/) ([japanese](http://www.phontron.com/kytea/index-ja.html))
 <br/>
 A general toolkit developed for analyzing text, with a focus on Japanese, Chinese and other languages requiring word or morpheme segmentation.
+<br/>
+Extra models for specific languages can be found at [here](http://www.phontron.com/kytea/model.html#japanese). 
 - [Moses](https://github.com/moses-smt/mosesdecoder)
 <br/>
 Moses, the machine translation system. Mainly the preprocessing script is used. (should pay attention to script path when use it)

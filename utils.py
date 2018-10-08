@@ -73,7 +73,9 @@ def gen_filepair(in_fnames, out_fnames, infix_str):
     """
 
     if out_fnames is None:
-        out_fnames = [infix(fname, infix_str) for fname in out_fnames]
+        out_fnames = [infix(fname, infix_str) for fname in in_fnames]
+    else:
+        assert len(out_fnames) == len(in_fnames)
     for fname in out_fnames:
         mkdir_if_none(fname)
 
