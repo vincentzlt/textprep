@@ -29,7 +29,7 @@ def read_ids(ids_file, circle_char_file, single_char_file):
     for l in tqdm(open(ids_file, 'rt', encoding='utf8'), desc='read ids'):
         if l.startswith('#'): continue
 
-        unicode, c, *decomps = l.strip().split()
+        _, c, *decomps = l.strip().split()
         for d in decomps:
             d = RE_sq_braket.sub('', d)
             if not d in decomp_set:
@@ -125,9 +125,9 @@ def gen_vocab_decomp(char_decomp, vocab_file):
 
 def decomp(args):
     dir_name, fname = os.path.split(args.input[0])
-    f_basename, ext = os.path.splitext(fname)
+    _, ext = os.path.splitext(fname)
     vocab_fname = os.path.join(dir_name, 'vocab' + ext)
-    decomp_fname = os.path.join(dir_name, 'decomp' + ext)
+    decomp_fname = os.path.join(dir_name, args.level + '_decomp' + ext)
 
     if not os.path.exists(vocab_fname):
         vocab_args = argparse.Namespace(
@@ -148,8 +148,7 @@ def decomp(args):
 
     word_decomp = gen_vocab_decomp(char_decomp, vocab_fname)
 
-    save_decomp(word_decomp,
-                os.path.join(dir_name, args.level + '_decomp' + ext))
+    save_decomp(word_decomp, os.path.join(dir_name, decomp_fname))
 
     for in_fname in args.input:
         out_fname = infix(in_fname, args.level)

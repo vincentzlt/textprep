@@ -74,7 +74,7 @@ def get_parser():
         '-d', '--ids_file', help='cjkvi_ids file', type=str, required=True)
     parser_decomp.add_argument(
         '-l',
-        '--evel',
+        '--level',
         help='decomp level.',
         choices=['ideo', 'stroke'],
         type=str,

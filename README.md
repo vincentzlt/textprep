@@ -27,3 +27,31 @@ Unsupervised text tokenizer for Neural Network-based text generation.
   handle progress bars
 
 ## usage
+
+There are four sub-commands: tok, vocab, decomp, reverse. Use
+
+    python3 textprep.py -h
+
+to get detailed usage information for each sub-commands.
+
+### examples
+- use 'jieba' to tokenize chinese text. if you choose spm/bpe, relevant subword models will be trained by `Sentencepiece` first.
+  
+      python3 textprep.py tok -m jieba -i input.cn -o output.cn
+
+- generate vocab of a maximum vocab size
+
+      python3 textprep.py vocab -m mecab -i input.jp -m 30000
+
+- decomposition chinese text into ideograph sequences. the ids file `ids.txt` can be found in `cjkvi-ids` sub-module. the circle/single char files can be found in `data` folder.
+
+      python3 textprep.py decomp -d ./cjkvi-ids/ids.txt -c ./data/circle_char.txt -s ./data/single_char.txt -i tok/input.cn
+
+- reverse transform decomposed/tokenized files back to original text. if reverse transform decomposed data, the decomp file (decomp dict) should be specified
+
+      python3 textprep.py reverse -i ./tok/input.cn -m bpe
+
+
+## plan
+
+- pipeline the sub-commands

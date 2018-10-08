@@ -13,7 +13,7 @@ def reverse_spm(line):
 
 
 def reverse_decomp(line, reverse_decomp_dict):
-    return ' '.joint([reverse_decomp_dict.get(w, w) for w in line.split()])
+    return ' '.join([reverse_decomp_dict.get(w, w) for w in line.split()])
 
 
 def reverse(args):
