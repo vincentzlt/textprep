@@ -2,6 +2,7 @@ import os
 import argparse
 from utils import infix, mkdir_if_none
 from tqdm import tqdm
+import functools
 
 
 def rm_space(line):
@@ -17,12 +18,18 @@ def reverse_decomp(line, reverse_decomp_dict):
 
 
 def reverse(args):
+    reverse_decomp_dict = {}
+    for l in open(reverse_decomp_dict, 'rt', encoding='utf8'):
+        c, decomp = l.strip().split()
+        reverse_decomp_dict[decomp] = c
+
     if args.method in ['jieba', 'mecab', 'kytea', 'moses']:
         reverse_func = rm_space
     elif args.method in ['bpe', 'spm']:
         reverse_func = reverse_spm
     elif args.method in ['decomp']:
-        reverse_func = reverse_decomp
+        reverse_func = functools.partial(
+            reverse_decomp, reverse_decomp_dict=reverse_decomp_dict)
     else:
         raise ValueError('method not supported.')
 
