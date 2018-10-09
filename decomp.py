@@ -148,7 +148,7 @@ def decomp(args):
 
     word_decomp = gen_vocab_decomp(char_decomp, vocab_fname)
 
-    save_decomp(word_decomp, os.path.join(dir_name, decomp_fname))
+    save_decomp(word_decomp, decomp_fname)
 
     for in_fname in args.input:
         out_fname = infix(in_fname, args.level)
