@@ -157,7 +157,7 @@ def decomp(args):
             for l in tqdm(
                     open(in_fname, 'rt', encoding='utf8'),
                     desc='decomp to {}'.format(out_fname)):
-                fout.write(' '.join([word_decomp[w]
+                fout.write(' '.join([word_decomp.get(w, w)
                                      for w in l.split()]) + '\n')
 
 
