@@ -19,7 +19,7 @@ def reverse_decomp(line, reverse_decomp_dict):
 
 def reverse(args):
     reverse_decomp_dict = {}
-    for l in open(reverse_decomp_dict, 'rt', encoding='utf8'):
+    for l in open(args.decomp_file, 'rt', encoding='utf8'):
         c, decomp = l.strip().split()
         reverse_decomp_dict[decomp] = c
 
