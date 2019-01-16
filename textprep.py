@@ -1,129 +1,87 @@
-from tqdm import tqdm
-import collections
 import argparse
-import os
-import subprocess
-import sys
-import unicodedata
-import fileinput
-from tok import tok
-from vocab import vocab
-from decomp import decomp
-from reverse import reverse
+
+from decomp import main as decomp
+from sample import main as sample
+from draw import main as draw
 
 
 def get_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-p',
+        '--processes',
+        type=int,
+        default=4,
+        help='the number of subprocesses.')
+    subparsers = parser.add_subparsers()
 
-    subparsers = parser.add_subparsers(
-        title='subcommands',
-        description='perform different preprocessing method on text',
-        help='')
-
-    parser_tok = subparsers.add_parser(
-        'tok',
-        help='process cjkvi-ids data with manually annotated decomp data.')
-    parser_vocab = subparsers.add_parser(
-        'vocab', help='gen vocab from tokenized files.')
-    parser_decomp = subparsers.add_parser(
-        'decomp', help='decomp text into ideographs')
-    parser_reverse = subparsers.add_parser(
-        'reverse', help='reverse tokenization')
-
-    parser_tok.add_argument(
-        '-m',
-        '--method',
-        choices=[
-            'jieba', 'mecab', 'kytea', 'moses', 'normalize', 'bpe', 'spm'
-        ],
-        help='choose tok method',
-        required=True)
-    parser_tok.add_argument(
-        '-v', '--vocab_size', help='vocab size', type=str, default='6000')
-    parser_tok.add_argument(
-        '-i',
-        '--input',
-        nargs='*',
-        help='input file(s).',
+    decomp_parser = subparsers.add_parser('decomp')
+    parser.add_argument('fname', type=str, help='the input fname.')
+    parser.add_argument(
+        '-r',
+        '--reverse',
+        default=False,
+        help=
+        'whether to reverse process the input file. If True: compose back to normal text file from input fname and vocab fname; Else: do the normal decomposition.'
+    )
+    parser.add_argument(
+        '-v',
+        '--vocab_fname',
         type=str,
-        required=True)
-    parser_tok.add_argument(
-        '-o', '--output', nargs='*', help='output file(s).', type=str)
-    parser_tok.add_argument(
-        '-e',
-        '--extra_options',
-        help='extra cmd option when tokenize the data.',
-        type=str,
-        default='')
-    parser_tok.set_defaults(func=tok)
-
-    parser_vocab.add_argument(
-        '-i',
-        '--input',
-        nargs='*',
-        help='input file(s).',
-        type=str,
-        required=True)
-    parser_vocab.add_argument(
-        '-o', '--output', help='output vocab file.', type=str)
-    parser_vocab.add_argument(
-        '-m', '--max_vocab_size', help='maximize vocab size.', default=30000)
-    parser_vocab.set_defaults(func=vocab)
-
-    parser_decomp.add_argument(
-        '-d', '--ids_file', help='cjkvi_ids file', type=str, required=True)
-    parser_decomp.add_argument(
+        help=
+        'the vocab fname. in decomp process, vocab file will be generated automatically; in comp process, vocab file must exist to be read from.'
+    )
+    parser.add_argument(
         '-l',
         '--level',
-        help='decomp level.',
-        choices=['ideo', 'stroke'],
-        type=str,
-        required=True)
-    parser_decomp.add_argument(
-        '-c',
-        '--circle_char_file',
-        help='annotated circled char file.',
-        type=str,
-        required=True)
-    parser_decomp.add_argument(
-        '-s',
-        '--single_char_file',
-        help='annotated single char file.',
-        type=str,
-        required=True)
-    parser_decomp.add_argument(
+        choices=['ideo_raw', 'ideo_finest', 'stroke'],
+        help='to what level should the decomposition be.')
+    parser.add_argument(
         '-i',
-        '--input',
-        nargs='*',
-        help='output decomp file.',
-        type=str,
-        required=True)
-    parser_decomp.add_argument(
-        '-o', '--output', nargs='*', help='output decomp file.', type=str)
-    parser_decomp.set_defaults(func=decomp)
+        '--idc',
+        default=True,
+        help='whether to include structual IDCs in the decomp.')
+    parser.add_argument(
+        '-o', '--output_fname', type=str, help='the output file name.')
+    decomp_parser.set_defaults(func=decomp)
 
-    parser_reverse.add_argument(
-        '-i',
-        '--input',
-        help='tokenized input file.',
-        nargs='*',
+    sample_parser = subparsers.add_parser('sample')
+    sample_parser.add_argument(
+        '-s', '--src_fname', type=str, help='source file name.')
+    sample_parser.add_argument(
+        '-t', '--trg_fname', type=str, help='target file name.')
+    sample_parser.add_argument(
+        '-n',
+        type=int,
+        help=
+        'num of sampled sentences. should not larger than num of lines in either files.'
+    )
+    sample_parser.add_argument(
+        '-r', type=float, help='the target share token rate for sampling.')
+    sample_parser.add_argument(
+        '-k', type=int, help='num of sents extracted for each sample step.')
+    sample_parser.add_argument(
+        '-d',
+        '--draw',
         type=str,
-        required=True)
-    parser_reverse.add_argument(
-        '-o', '--output', help='output file.', nargs='*', type=str)
-    parser_reverse.add_argument(
-        '-m',
-        '--method',
-        help='tokenize method',
-        choices=[
-            'jieba', 'mecab', 'kytea', 'moses', 'normalize', 'bpe', 'spm',
-            'decomp'
-        ],
-        type=str,
-        required=True)
-    parser_reverse.add_argument(
-        '-d', '--decomp_file', help='decomp file. (if needed)', type=str)
-    parser_reverse.set_defaults(func=reverse)
+        help='if given, draw a graph of sampling process. should end with .html'
+    )
+    sample_parser.set_defaults(func=sample)
+
+    draw_parser = subparsers.add_parser('draw')
+    draw_parser.add_argument(
+        'src_fname', type=str, help='the source file name.')
+    draw_parser.add_argument(
+        'trg_fname', type=str, help='the target file name')
+    draw_parser.add_argument(
+        '--shared_only',
+        action='store_true',
+        help='whether to only draw shared tokens')
+    draw_parser.add_argument(
+        '--output_fname',
+        default='scatter_share_token.html',
+        help='output file name.')
+    draw_parser.set_defaults(func=draw)
 
     return parser
 

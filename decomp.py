@@ -1,172 +1,183 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+import argparse as ap
+import collections as cl
 import re
-import fileinput
-import sys
-from tqdm import tqdm
-import argparse
-import os
-from vocab import vocab
-from utils import infix, mkdir_if_none
+import itertools as it
+import json
+
+# In[2]:
+
+DUP = '〾'
+IDCs = '⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻'
+IDS_FNAME = '../cjkvi-ids/ids.txt'
+CIRCLE_FNAME = '../data/circle_char.txt'
+SINGLE_FNAME = '../data/single_char.txt'
+RE_squarebrackets = re.compile(r'\[[^[]*\]')
+RE_IDCs = re.compile(r'[⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻]')
+
+# In[3]:
 
 
-def dup_if_needed(decomp, decomp_set):
-    dup_marker = '〾'
-    if not decomp in decomp_set:
-        return decomp
-    else:
+def _get_d(ds, ideos_set):
+    ds = [RE_squarebrackets.sub('', d) for d in ds]
+    difference = set(ds).difference(ideos_set)
+    while not difference:
+        ds = [DUP + d for d in ds]
+        difference = set(ds).difference(ideos_set)
+
+    d = difference.pop()
+    ideos_set.add(d)
+
+    return d, ideos_set
+
+
+# In[4]:
+
+
+def _get_char2ideos(fnames):
+    char2ideos = {}
+    ideos_set = set()
+
+    for l in it.chain.from_iterable(open(fname) for fname in fnames):
+        if not l.startswith('#'):
+            if l.startswith('U'):
+                u, c, *ds = l.strip().split()
+            else:
+                c, *ds = l.strip().split()
+
+            char2ideos[c], ideos_set = _get_d(ds, ideos_set)
+    return char2ideos
+
+
+# In[5]:
+
+
+def _recursive_decomp(char2ideos):
+    ideos_set = set()
+
+    for c, d in char2ideos.items():
         while True:
-            decomp = dup_marker + decomp
-            if not decomp in decomp_set:
-                return decomp
-
-
-RE_sq_braket = re.compile(r'\[.+?\]')
-
-
-def read_ids(ids_file, circle_char_file, single_char_file):
-    char_decomp = {}
-    decomp_set = set()
-
-    for l in tqdm(open(ids_file, 'rt', encoding='utf8'), desc='read ids'):
-        if l.startswith('#'): continue
-
-        _, c, *decomps = l.strip().split()
-        for d in decomps:
-            d = RE_sq_braket.sub('', d)
-            if not d in decomp_set:
-                decomp_set.add(d)
-                char_decomp[c] = d
+            new_d = ''.join([char2ideos.get(c_, c_) for c_ in d])
+            if new_d == d:
                 break
-        if not c in char_decomp:
-            d = RE_sq_braket.sub('', decomps[0])
-            d_bf = d
-            d = dup_if_needed(d, decomp_set)
-            decomp_set.add(d)
-            char_decomp[c] = d
+            else:
+                d = new_d
 
-            tqdm.write('\t{}: {} -> {}'.format(c, d_bf, d), file=sys.stderr)
-
-    for l in tqdm(
-            fileinput.input((circle_char_file, single_char_file)),
-            desc='read circle and single char'):
-        c, d = l.strip().split()
-        d_bf = d
-        if d in decomp_set:
-            d = dup_if_needed(d, decomp_set)
-
-        decomp_set.add(d)
-        char_decomp[c] = d
-
-        if d_bf != d:
-            tqdm.write('\t{}: {} -> {}'.format(c, d_bf, d), file=sys.stderr)
-
-    return char_decomp
+        while d in ideos_set:
+            d = DUP + d
+        char2ideos[c] = d
+        ideos_set.add(d)
 
 
-def recursive_decomp_(decomp, decomp_dict):
-    ret_str = ''
-    for d in decomp:
-        if d == decomp_dict.get(d, d):
-            ret_str += d
-        else:
-            ret_str += recursive_decomp_(decomp_dict[d], decomp_dict)
-    return ret_str
+# In[6]:
 
 
-def recursive_decomp(decomp_dict):
-    for c, decomp in tqdm(
-            decomp_dict.items(), desc='recursive decomp to stroke level'):
-        decomp = recursive_decomp_(decomp, decomp_dict)
-        decomp_dict[c] = decomp
+def _word_decomp(w, char2ideos, decomp_set):
+    decomp = ''.join([char2ideos.get(c, c) for c in w])
+
+    while decomp in decomp_set:
+        decomp = DUP + decomp
+    decomp_set.add(decomp)
+
+    return decomp, decomp_set
 
 
-def check_missing_decomp_info(decomp_dict):
-    circle_char = set(list('①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑲'))
-    single_char = set(list('⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻〾'))
-
-    for c, decomp in tqdm(decomp_dict.items(), desc='check circle char'):
-        has_circle_char = any(d in circle_char for d in decomp)
-        if has_circle_char:
-            tqdm.write('{}: {}'.format(c, decomp), file=sys.stderr)
-
-    for c, decomp in tqdm(decomp_dict.items(), desc='check single char'):
-        has_single_char = not any(d in single_char for d in decomp)
-        if has_single_char:
-            tqdm.write('{}: {}'.format(c, decomp), file=sys.stderr)
+# In[7]:
 
 
-def save_decomp(decomp_dict, out_file):
-    print('saving decomps to: {}'.format(out_file), file=sys.stderr)
-    with open(out_file, 'wt', encoding='utf8') as fout:
-        for c, decomp in decomp_dict.items():
-            fout.write('{}\t{}\n'.format(c, decomp))
-
-
-def gen_vocab_decomp(char_decomp, vocab_file):
-    vocab = {}
-    for l in open(vocab_file, encoding='utf8'):
-        v, count = l.strip().split()
-        vocab[v] = count
-
+def _vocab2ideos(vocab, char2ideos):
+    vocab_decomps = {}
     decomp_set = set()
-    word_decomp = {}
-    for w in tqdm(vocab, desc='gen vocab decomp'):
-        d = ''.join([char_decomp.get(c, c) for c in w])
-        if not d in decomp_set:
-            decomp_set.add(d)
-            word_decomp[w] = d
-        else:
-            d_bf = d
-            d = dup_if_needed(d, decomp_set)
-            decomp_set.add(d)
-            word_decomp[w] = d
-            tqdm.write('\t{}: {} -> {}'.format(w, d_bf, d), file=sys.stderr)
-    return word_decomp
+    for w in vocab:
+
+        decomp, decomp_set = _word_decomp(w, char2ideos, decomp_set)
+        vocab_decomps[w] = decomp
+
+    return vocab_decomps
 
 
-def decomp(args):
-    dir_name, fname = os.path.split(args.input[0])
-    _, ext = os.path.splitext(fname)
-    vocab_fname = os.path.join(dir_name, 'vocab' + ext)
-    decomp_fname = os.path.join(dir_name, args.level + '_decomp' + ext)
+# In[8]:
 
-    if not os.path.exists(vocab_fname):
-        vocab_args = argparse.Namespace(
-            input=args.input, output=vocab_fname, max_vocab_size=30000)
-        vocab(vocab_args)
 
-    char_decomp = read_ids(
-        ids_file=args.ids_file,
-        circle_char_file=args.circle_char_file,
-        single_char_file=args.single_char_file)
-    assert len(char_decomp.values()) == len(set(char_decomp.values()))
-    print('num of decomps: {}'.format(len(char_decomp)), file=sys.stderr)
+def _chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
 
-    check_missing_decomp_info(char_decomp)
 
-    if args.level == 'stroke':
-        recursive_decomp(char_decomp)
+# In[10]:
 
-    word_decomp = gen_vocab_decomp(char_decomp, vocab_fname)
 
-    save_decomp(word_decomp, decomp_fname)
+def main(args):
+    if args.level.startswith('ideo'):
+        IDS_fnames = [IDS_FNAME, CIRCLE_FNAME]
+    elif args.level.startswith('stroke'):
+        IDS_fnames = [IDS_FNAME, CIRCLE_FNAME, SINGLE_FNAME]
 
-    for in_fname in args.input:
-        out_fname = infix(in_fname, args.level)
-        mkdir_if_none(out_fname)
-        with open(out_fname, 'wt', encoding='utf8') as fout:
-            for l in tqdm(
-                    open(in_fname, 'rt', encoding='utf8'),
-                    desc='decomp to {}'.format(out_fname)):
-                fout.write(' '.join([word_decomp.get(w, w)
-                                     for w in l.split()]) + '\n')
+    char2ideos = _get_char2ideos(IDS_fnames)
 
+    if args.reverse:
+        vocab = json.loads(open(args.vocab_fname).read())
+    else:
+        if not args.idc:
+            for c, d in char2ideos.items():
+                char2ideos[c] = RE_IDCs.sub('', d)
+
+        if args.level in ['ideo_finest', 'stroke']:
+            _recursive_decomp(char2ideos)
+        vocab = cl.Counter(
+            w for l in open(args.fname) for w in l.strip().split())
+        open(args.vocab_fname, 'wt').write((json.dumps(
+            ensure_ascii=False, obj=dict(vocab.most_common()), indent=4)))
+
+    vocab2ideos = _vocab2ideos(vocab, char2ideos)
+
+    mapping = {v: k
+               for k, v in vocab2ideos.items()
+               } if args.reverse else vocab2ideos
+
+    with open(args.output_fname, 'wt') as fout:
+        for l in open(args.fname):
+            fout.write(' '.join([mapping.get(w, w)
+                                 for w in l.strip().split()]) + '\n')
+
+
+# In[15]:
 
 if __name__ == '__main__':
-    args = argparse.Namespace(
-        input=['./test_data/jieba/example.txt'],
-        output=None,
-        ids_file='./cjkvi-ids/ids.txt',
-        circle_char_file='./data/circle_char.txt',
-        single_char_file='./data/single_char.txt',
-        level='stroke')
-    decomp(args)
+    parser = ap.ArgumentParser()
+
+    parser.add_argument('fname', type=str, help='the input fname.')
+    parser.add_argument(
+        '-r',
+        '--reverse',
+        default=False,
+        help=
+        'whether to reverse process the input file. If reverse: compose back to normal text file from input fname and vocab fname. Else: do the normal decomposition.'
+    )
+    parser.add_argument(
+        '-v',
+        '--vocab_fname',
+        type=str,
+        help=
+        'the vocab fname. in decomp process, vocab file will be generated automatically; in comp process, vocab file must exist to be read from.'
+    )
+    parser.add_argument(
+        '-l',
+        '--level',
+        choices=['ideo_raw', 'ideo_finest', 'stroke'],
+        help='to what level should the decomposition be.')
+    parser.add_argument(
+        '-i',
+        '--idc',
+        default=True,
+        help='whether to include structual IDCs in the decomp.')
+    parser.add_argument(
+        '-o', '--output_fname', type=str, help='the output file name.')
+
+    args = parser.parse_args()
+    main(args)
