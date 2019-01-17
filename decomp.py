@@ -1,25 +1,19 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
 import argparse as ap
 import collections as cl
 import re
 import itertools as it
 import json
 
-# In[2]:
-
 DUP = '〾'
 IDCs = '⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻'
-IDS_FNAME = '../cjkvi-ids/ids.txt'
-CIRCLE_FNAME = '../data/circle_char.txt'
-SINGLE_FNAME = '../data/single_char.txt'
+IDS_FNAME = './cjkvi-ids/ids.txt'
+CIRCLE_FNAME = './data/circle_char.txt'
+SINGLE_FNAME = './data/single_char.txt'
 RE_squarebrackets = re.compile(r'\[[^[]*\]')
 RE_IDCs = re.compile(r'[⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻]')
-
-# In[3]:
 
 
 def _get_d(ds, ideos_set):
@@ -35,9 +29,6 @@ def _get_d(ds, ideos_set):
     return d, ideos_set
 
 
-# In[4]:
-
-
 def _get_char2ideos(fnames):
     char2ideos = {}
     ideos_set = set()
@@ -51,9 +42,6 @@ def _get_char2ideos(fnames):
 
             char2ideos[c], ideos_set = _get_d(ds, ideos_set)
     return char2ideos
-
-
-# In[5]:
 
 
 def _recursive_decomp(char2ideos):
@@ -73,9 +61,6 @@ def _recursive_decomp(char2ideos):
         ideos_set.add(d)
 
 
-# In[6]:
-
-
 def _word_decomp(w, char2ideos, decomp_set):
     decomp = ''.join([char2ideos.get(c, c) for c in w])
 
@@ -84,9 +69,6 @@ def _word_decomp(w, char2ideos, decomp_set):
     decomp_set.add(decomp)
 
     return decomp, decomp_set
-
-
-# In[7]:
 
 
 def _vocab2ideos(vocab, char2ideos):
@@ -100,16 +82,10 @@ def _vocab2ideos(vocab, char2ideos):
     return vocab_decomps
 
 
-# In[8]:
-
-
 def _chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
-
-
-# In[10]:
 
 
 def main(args):
@@ -145,8 +121,6 @@ def main(args):
             fout.write(' '.join([mapping.get(w, w)
                                  for w in l.strip().split()]) + '\n')
 
-
-# In[15]:
 
 if __name__ == '__main__':
     parser = ap.ArgumentParser()

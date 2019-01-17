@@ -1,65 +1,154 @@
 # textprep
-text pre-processing toolkit for character-based languages: dict-based
-tokenization (Jieba, Mecab, Kytea), subword tokenization (Sentencepiece
-unigram/bpe), vocab generalization, text normalization, reverse tokenization,
-character decomposition (based on cjkvi-ids project and manual data), etc.
 
-## required softwares
+Textprep is an analyzing tool for both parallel and non-parallel corpus and its down-stream Natural Language Processing and Machine Translation tasks. It is designed especially for logographic languages such as Chinese and Japanese, which can help you do the following:
 
-- [Jieba](https://github.com/fxsjy/jieba)
+1. Decomposing characters into ideographs and strokes. (Thanks to the [CHISE](http://www.chise.org/) project and [cjkvi-ids](https://github.com/cjkvi/cjkvi-ids) project)
+2. Drawing offline plot.ly graphs showing relationship between shared types and tokens between two languages.
+3. Sampling translation corpus to given token shared rate.
 
-“结巴”中文分词：做最好的 Python 中文分词组件
+# requirements
 
-"Jieba" (Chinese for "to stutter") Chinese text segmentation: built to be the best Python Chinese word segmentation module.
+```
+numpy==1.16.0
+tqdm==4.29.1
+plotly==3.5.0
+```
 
-- [Mecab](http://taku910.github.io/mecab/)
+# usage
 
-Yet Another Part-of-Speech and Morphological Analyzer (doc in Japanese)
+```
+python textprep.py {decomp,draw,sample} ...
+```
 
-- [Kytea](http://www.phontron.com/kytea/) ([japanese](http://www.phontron.com/kytea/index-ja.html))
+Details pleas use `-h`.
 
-A general toolkit developed for analyzing text, with a focus on Japanese, Chinese and other languages requiring word or morpheme segmentation.
+## decomp
 
-Extra models for specific languages can be found at [here](http://www.phontron.com/kytea/model.html#japanese). 
+```
+usage: textprep.py decomp [-h] [-r REVERSE] [-v VOCAB_FNAME]
+                          [-l {ideo_raw,ideo_finest,stroke}] [-i IDC]
+                          [-o OUTPUT_FNAME]
+                          fname
 
-- [Moses](https://github.com/moses-smt/mosesdecoder)
+positional arguments:
+  fname                 the input fname.
 
-Moses, the machine translation system. Mainly the preprocessing script is used. (should pay attention to script path when use it)
+optional arguments:
+  -h, --help            show this help message and exit
+  -r REVERSE, --reverse REVERSE
+                        whether to reverse process the input file. If True:
+                        compose back to normal text file from input fname and
+                        vocab fname; Else: do the normal decomposition.
+  -v VOCAB_FNAME, --vocab_fname VOCAB_FNAME
+                        the vocab fname. in decomp process, vocab file will be
+                        generated automatically; in comp process, vocab file
+                        must exist to be read from.
+  -l {ideo_raw,ideo_finest,stroke}, --level {ideo_raw,ideo_finest,stroke}
+                        to what level should the decomposition be.
+  -i IDC, --idc IDC     whether to include structual IDCs in the decomp.
+  -o OUTPUT_FNAME, --output_fname OUTPUT_FNAME
+                        the output file name.
+```
 
-- [SentencePiece](https://github.com/google/sentencepiece)
+## draw
 
-Unsupervised text tokenizer for Neural Network-based text generation.
+```
+usage: textprep.py draw [-h] [--type {scatter,rate,both}]
+                        [--output_prefix OUTPUT_PREFIX]
+                        src_fname trg_fname
 
-- [tqdm](https://github.com/tqdm/tqdm)
-  
-  handle progress bars
+positional arguments:
+  src_fname             the source file name.
+  trg_fname             the target file name
 
-## usage
+optional arguments:
+  -h, --help            show this help message and exit
+  --type {scatter,rate,both}
+                        whether to only draw shared tokens
+  --output_prefix OUTPUT_PREFIX
+                        output prefix.
+```
+            
+## sample
 
-There are four sub-commands: tok, vocab, decomp, reverse. Use
+Note that this command requires heavy computation depends on your dataset.
 
-    python3 textprep.py -h
+```
+usage: textprep.py sample [-h] [-n N] [-r R] [-k K] [-d DRAW]
+                          src_fname trg_fname
 
-to get detailed usage information for each sub-commands.
+positional arguments:
+  src_fname             source file name.
+  trg_fname             target file name.
 
-### examples
-- use 'jieba' to tokenize chinese text. if you choose spm/bpe, relevant subword models will be trained by `Sentencepiece` first.
-  
-      python3 textprep.py tok -m jieba -i input.cn -o output.cn
+optional arguments:
+  -h, --help            show this help message and exit
+  -n N                  num of sampled sentences. should not larger than num
+                        of lines in either files.
+  -r R                  the target share token rate for sampling.
+  -k K                  num of sents extracted for each sample step.
+  -d DRAW, --draw DRAW  if given, draw a graph of sampling process. should end
+                        with .html
+  --src_output SRC_OUTPUT
+                        source output filename.
+  --trg_output TRG_OUTPUT
+                        target output filename.
+```
 
-- generate vocab of a maximum vocab size
+# examples
 
-      python3 textprep.py vocab -m mecab -i input.jp -m 30000
+## decomp chinese data to ideograph, finest ideograph and stroke level
 
-- decomposition chinese text into ideograph sequences. the ids file `ids.txt` can be found in `cjkvi-ids` sub-module. the circle/single char files can be found in `data` folder.
+original text:
 
-      python3 textprep.py decomp -d ./cjkvi-ids/ids.txt -c ./data/circle_char.txt -s ./data/single_char.txt -i tok/input.cn
+```
+机器人 行业 在 环境 问题 上 的 措施
+```
 
-- reverse transform decomposed/tokenized files back to original text. if reverse transform decomposed data, the decomp file (decomp dict) should be specified
+ideograph:
 
-      python3 textprep.py reverse -i ./tok/input.cn -m bpe
+```
+⿰木几⿳吅犬吅人 ⿰彳亍⿱⿻⿰丨丨⿰丶丿一 ⿸⿱⿻一丿丨土 ⿰王不⿰土竟 ⿵门口⿺是页 ⿱⺊一 ⿰白勺 ⿰扌昔⿰方㐌
+```
+
+ideograph-finest:
+
+```
+⿰木几⿳⿰口口犬⿰口口人 ⿰彳⿱一⿱一亅⿱⿻⿰丨丨⿰丶丿一 ⿸⿱⿻一丿丨⿱十一 ⿰
+⿱一⿱十一⿱一⿸⿸丿丨丶⿰⿱十一⿱⿱⿱⿱⿱丶一丷一日⿰丿乚 ⿵门口⿺⿱日⿱一龰页 ⿱⺊一 ⿰白⿹勹一 ⿰扌⿱⿱⿻十丨一日⿰⿱⿱丶一⿰丿𠃌⿱𠂉也
+```
+
+stroke:
+
+```
+⿰⿻⿻一丨⿰丿乀⿰㇓乙⿳⿰⿱⿰丨𠃌一⿱⿰丨𠃌一⿻一⿸丿乀⿰⿱⿰丨𠃌一⿱⿰丨𠃌一⿸丿乀 ⿰⿳丿丿丨⿱一⿱一亅⿱⿻⿰丨丨⿰丶丿一 ⿸⿱⿻一丿丨⿱⿻一丨一 ⿰⿱一⿱⿻一
+丨一⿱一⿸⿸丿丨丶⿰⿱⿻一丨一⿱⿱⿱⿱⿱丶一⿰丶丿一〾⿵⿰丨𠃌⿱一一⿰丿乚 ⿵⿰
+⿱丶丨𠃌⿱⿰丨𠃌一⿺⿱〾⿵⿰丨𠃌⿱一一⿱一⿺⿰丨一⿸丿乀⿳一丿⿵⿰丨𠃍⿸丿乀 ⿱
+⿰丨一一 ⿰⿱丿〾⿵⿰丨𠃌⿱一一⿹〾〾⿻丿𠃌丶 ⿰⿻⿻一亅㇀⿱⿱⿻⿻一丨丨一〾⿵⿰丨𠃌⿱一一⿰⿱⿱丶一⿰丿𠃌⿱⿰丿一⿻丨⿻𠃌乚
+```
+
+## plotting the shared tokens
+
+Scatter plot can show the shared tokens and their frequencies in both languages.
+
+![scatter](scatter.gif)
+
+Rate plot can show the bias of shared tokens and the cumulative share token rate.
+
+![line](rate.gif)
+
+## sample for a given share token rate
+
+Sample plot can show the on-the-fly share token rate and new vocabularies for each sample step.
+
+![sample](r.gif)
 
 
-## plan
+# update history
 
-- pipeline the sub-commands
+- First commit: 2018/10/09
+  - Create the basic decompse function.
+  - Add apis to call other word tokenization tools (dict-based tokenization (Jieba, Mecab, Kytea), subword tokenization (Sentencepiece unigram/bpe), etc)
+- Second commit: 2019/01/17
+  - Remove apis for other tokenizers
+  - Add draw and sample functions.

@@ -6,50 +6,44 @@ from draw import main as draw
 
 
 def get_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-p',
-        '--processes',
-        type=int,
-        default=4,
-        help='the number of subprocesses.')
+    parser = argparse.ArgumentParser(
+        description=
+        'tool for analyze (parallel / non-parallel) translation corpus.')
     subparsers = parser.add_subparsers()
 
     decomp_parser = subparsers.add_parser('decomp')
-    parser.add_argument('fname', type=str, help='the input fname.')
-    parser.add_argument(
+    decomp_parser.add_argument('fname', type=str, help='the input fname.')
+    decomp_parser.add_argument(
         '-r',
         '--reverse',
         default=False,
         help=
         'whether to reverse process the input file. If True: compose back to normal text file from input fname and vocab fname; Else: do the normal decomposition.'
     )
-    parser.add_argument(
+    decomp_parser.add_argument(
         '-v',
         '--vocab_fname',
         type=str,
         help=
         'the vocab fname. in decomp process, vocab file will be generated automatically; in comp process, vocab file must exist to be read from.'
     )
-    parser.add_argument(
+    decomp_parser.add_argument(
         '-l',
         '--level',
         choices=['ideo_raw', 'ideo_finest', 'stroke'],
         help='to what level should the decomposition be.')
-    parser.add_argument(
+    decomp_parser.add_argument(
         '-i',
         '--idc',
         default=True,
         help='whether to include structual IDCs in the decomp.')
-    parser.add_argument(
+    decomp_parser.add_argument(
         '-o', '--output_fname', type=str, help='the output file name.')
     decomp_parser.set_defaults(func=decomp)
 
     sample_parser = subparsers.add_parser('sample')
-    sample_parser.add_argument(
-        '-s', '--src_fname', type=str, help='source file name.')
-    sample_parser.add_argument(
-        '-t', '--trg_fname', type=str, help='target file name.')
+    sample_parser.add_argument('src_fname', type=str, help='source file name.')
+    sample_parser.add_argument('trg_fname', type=str, help='target file name.')
     sample_parser.add_argument(
         '-n',
         type=int,
@@ -74,13 +68,22 @@ def get_parser():
     draw_parser.add_argument(
         'trg_fname', type=str, help='the target file name')
     draw_parser.add_argument(
-        '--shared_only',
-        action='store_true',
+        '--type',
+        type=str,
+        choices=['scatter', 'rate', 'both'],
         help='whether to only draw shared tokens')
     draw_parser.add_argument(
-        '--output_fname',
-        default='scatter_share_token.html',
-        help='output file name.')
+        '--output_prefix', default='pref', help='output prefix.')
+    sample_parser.add_argument(
+        '--src_output',
+        type=str,
+        default='src_sampled.txt',
+        help='source output filename.')
+    sample_parser.add_argument(
+        '--trg_output',
+        type=str,
+        default='trg_sampled.txt',
+        help='target output filename.')
     draw_parser.set_defaults(func=draw)
 
     return parser

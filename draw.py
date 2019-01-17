@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
 import plotly.offline as py
 import plotly.graph_objs as go
 
@@ -13,12 +11,8 @@ from tqdm import tqdm
 import os
 import argparse as ap
 
-# In[3]:
 
-# In[5]:
-
-
-def _draw_scatter(all_vocabs, all_freqs, output_fname):
+def _draw_scatter(all_vocabs, all_freqs, output_prefix):
     colors = [(s and t) and (s < t and s / t or t / s) or 0
               for s, t in all_freqs]
     colors = [c and np.log(c) or 0 for c in colors]
@@ -36,13 +30,10 @@ def _draw_scatter(all_vocabs, all_freqs, output_fname):
 
     fig = go.Figure(data=[trace], layout=layout)
     py.plot(
-        fig, filename='{}_scatter.html'.format(output_fname), auto_open=False)
+        fig, filename='{}_scatter.html'.format(output_prefix), auto_open=False)
 
 
-# In[22]:
-
-
-def _draw_rate(all_vocabs, all_freqs, output_fname):
+def _draw_rate(all_vocabs, all_freqs, output_prefix):
     biases = np.array(
         [(s and t) and (s / t if s > t else t / s) or 0 for s, t in all_freqs])
     freqs = np.array([s + t for s, t in all_freqs])
@@ -77,10 +68,8 @@ def _draw_rate(all_vocabs, all_freqs, output_fname):
             side='right',
             overlaying='y'))
     fig = go.Figure(data=[t1, t2], layout=layout)
-    py.plot(fig, filename='{}_rate.html'.format(output_fname), auto_open=False)
-
-
-# In[10]:
+    py.plot(
+        fig, filename='{}_rate.html'.format(output_prefix), auto_open=False)
 
 
 def main(args):
@@ -101,23 +90,14 @@ def main(args):
                  for v in all_vocabs]
 
     if args.type == 'scatter':
-        _draw_scatter(all_vocabs, all_freqs)
+        _draw_scatter(all_vocabs, all_freqs, args.output_prefix)
     elif args.type == 'rate':
-        _draw_rate(all_vocabs, all_freqs)
+        _draw_rate(all_vocabs, all_freqs, args.output_prefix)
     elif args.type == 'both':
-        _draw_rate(all_vocabs, all_freqs, args.output_fname)
-        _draw_scatter(all_vocabs, all_freqs, args.output_fname)
+        _draw_rate(all_vocabs, all_freqs, args.output_prefix)
+        _draw_scatter(all_vocabs, all_freqs, args.output_prefix)
 
 
-# In[2]:
-
-args = ap.Namespace(
-    src_fname='/clwork/vincentzlt/data/aspec/jc/word/train.cn',
-    trg_fname='/clwork/vincentzlt/data/aspec/jc/word/train.jp',
-    type='both',  # scatter or rate
-    output_fname='aspec_word')
-
-# In[ ]:
 if __name__ == '__main__':
     draw_parser = ap.ArgumentParser()
     draw_parser.add_argument(
@@ -125,13 +105,12 @@ if __name__ == '__main__':
     draw_parser.add_argument(
         'trg_fname', type=str, help='the target file name')
     draw_parser.add_argument(
-        '--shared_only',
-        action='store_true',
+        '--type',
+        type=str,
+        choices=['scatter', 'rate', 'both'],
         help='whether to only draw shared tokens')
     draw_parser.add_argument(
-        '--output_fname',
-        default='scatter_share_token.html',
-        help='output file name.')
+        '--output_prefix', default='pref', help='output prefix.')
     args = draw_parser.parse_args()
 
     main(args)
