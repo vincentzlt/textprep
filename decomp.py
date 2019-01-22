@@ -6,12 +6,14 @@ import collections as cl
 import re
 import itertools as it
 import json
+import os
 
+CURRENT_DIR=os.path.dirname(os.path.realpath(__file__))
 DUP = '〾'
 IDCs = '⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻'
-IDS_FNAME = './cjkvi-ids/ids.txt'
-CIRCLE_FNAME = './data/circle_char.txt'
-SINGLE_FNAME = './data/single_char.txt'
+IDS_FNAME = os.path.join(CURRENT_DIR,'cjkvi-ids','ids.txt')
+CIRCLE_FNAME = os.path.join(CURRENT_DIR,'data','circle_char.txt')
+SINGLE_FNAME = os.path.join(CURRENT_DIR,'data','single_char.txt')
 RE_squarebrackets = re.compile(r'\[[^[]*\]')
 RE_IDCs = re.compile(r'[⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻]')
 
