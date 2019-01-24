@@ -8,12 +8,12 @@ import itertools as it
 import json
 import os
 
-CURRENT_DIR=os.path.dirname(os.path.realpath(__file__))
+CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 DUP = '〾'
 IDCs = '⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻'
-IDS_FNAME = os.path.join(CURRENT_DIR,'cjkvi-ids','ids.txt')
-CIRCLE_FNAME = os.path.join(CURRENT_DIR,'data','circle_char.txt')
-SINGLE_FNAME = os.path.join(CURRENT_DIR,'data','single_char.txt')
+IDS_FNAME = os.path.join(CURRENT_DIR, 'cjkvi-ids', 'ids.txt')
+CIRCLE_FNAME = os.path.join(CURRENT_DIR, 'data', 'circle_char.txt')
+SINGLE_FNAME = os.path.join(CURRENT_DIR, 'data', 'single_char.txt')
 RE_squarebrackets = re.compile(r'\[[^[]*\]')
 RE_IDCs = re.compile(r'[⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻]')
 
@@ -109,11 +109,10 @@ def main(args):
             _recursive_decomp(char2ideos)
         vocab = cl.Counter(
             w for l in open(args.fname) for w in l.strip().split())
-        open(args.vocab_fname, 'wt').write((json.dumps(
-            ensure_ascii=False, obj=dict(vocab.most_common()), indent=4)))
 
     vocab2ideos = _vocab2ideos(vocab, char2ideos)
-
+    open(args.vocab_fname, 'wt').write((json.dumps(
+        ensure_ascii=False, obj=dict(vocab2ideos), indent=4)))
     mapping = {v: k
                for k, v in vocab2ideos.items()
                } if args.reverse else vocab2ideos
@@ -139,6 +138,7 @@ if __name__ == '__main__':
         '-v',
         '--vocab_fname',
         type=str,
+        required=True,
         help=
         'the vocab fname. in decomp process, vocab file will be generated automatically; in comp process, vocab file must exist to be read from.'
     )
