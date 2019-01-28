@@ -84,6 +84,9 @@ def main(args):
             open(args.trg_fname),
             desc='gen vocab from {}'.format(os.path.basename(args.trg_fname)))
         for w in l.strip().split())
+    
+    if len(src_freqs) * len(trg_freqs) == 0:
+        return
 
     all_vocabs = list(src_freqs.keys() | trg_freqs.keys())
     all_freqs = [(src_freqs.get(v, 0), trg_freqs.get(v, 0))
