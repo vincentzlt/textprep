@@ -36,7 +36,7 @@ def get_parser():
         '-i',
         '--idc',
         default=True,
-        help='whether to include structual IDCs in the decomp.')
+        help='whether to include structual IDCs in the decomp.  (yes/no)')
     decomp_parser.add_argument(
         '-o', '--output_fname', type=str, help='the output file name.')
     decomp_parser.set_defaults(func=decomp)

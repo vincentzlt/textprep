@@ -101,7 +101,7 @@ def main(args):
     if args.reverse:
         vocab = json.loads(open(args.vocab_fname).read())
     else:
-        if not args.idc:
+        if args.idc == 'no':
             for c, d in char2ideos.items():
                 char2ideos[c] = RE_IDCs.sub('', d)
 
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '-i',
         '--idc',
-        default=True,
-        help='whether to include structual IDCs in the decomp.')
+        default='yes',
+        help='whether to include structual IDCs in the decomp. (yes/no)')
     parser.add_argument(
         '-o', '--output_fname', type=str, help='the output file name.')
 
