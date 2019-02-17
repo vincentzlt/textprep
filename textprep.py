@@ -1,8 +1,9 @@
 import argparse
 
-from decomp import main as decomp
+from decomp import main as decomp, _str2bool
 from sample import main as sample
 from draw import main as draw
+from vocab import vocab
 
 
 def get_parser():
@@ -12,33 +13,36 @@ def get_parser():
     subparsers = parser.add_subparsers()
 
     decomp_parser = subparsers.add_parser('decomp')
-    decomp_parser.add_argument('fname', type=str, help='the input fname.')
+    decomp_parser.add_argument('input', help='the input fname.')
+    decomp_parser.add_argument('output', nargs='?', help='the output fname.')
     decomp_parser.add_argument(
-        '-r',
         '--reverse',
         default=False,
+        type=_str2bool,
         help=
-        'whether to reverse process the input file. If True: compose back to normal text file from input fname and vocab fname; Else: do the normal decomposition.'
-    )
+        'whether to reverse process the input file. If reverse: compose back'
+        ' to normal text file from input fname and vocab fname. Else: do the '
+        'normal decomposition.')
     decomp_parser.add_argument(
-        '-v',
-        '--vocab_fname',
+        '--vocab',
         type=str,
-        help=
-        'the vocab fname. in decomp process, vocab file will be generated automatically; in comp process, vocab file must exist to be read from.'
-    )
+        help='the vocab fname. not given, generate vocab from fname.')
     decomp_parser.add_argument(
-        '-l',
+        '--vocab_decomp',
+        type=str,
+        help='the vocab_decomp fname. in decomp process, vocab file will be '
+        'generated automatically; in comp process, vocab file must exist to '
+        'be read from.')
+    decomp_parser.add_argument(
         '--level',
+        default='ideo_raw',
         choices=['ideo_raw', 'ideo_finest', 'stroke'],
         help='to what level should the decomposition be.')
     decomp_parser.add_argument(
-        '-i',
         '--idc',
         default=True,
-        help='whether to include structual IDCs in the decomp.  (yes/no)')
-    decomp_parser.add_argument(
-        '-o', '--output_fname', type=str, help='the output file name.')
+        type=_str2bool,
+        help='whether to include structual IDCs in the decomp. (yes/no)')
     decomp_parser.set_defaults(func=decomp)
 
     sample_parser = subparsers.add_parser('sample')
@@ -85,6 +89,11 @@ def get_parser():
         default='trg_sampled.txt',
         help='target output filename.')
     draw_parser.set_defaults(func=draw)
+
+    vocab_parser = subparsers.add_parser('vocab')
+    vocab_parser.add_argument('input', nargs='*', help='input fnames.')
+    vocab_parser.add_argument('vocab', help='output vocab fname.')
+    vocab_parser.set_defaults(func=vocab)
 
     return parser
 

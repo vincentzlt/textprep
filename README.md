@@ -25,7 +25,7 @@ Details pleas use `-h`.
 ## decomp
 
 ```
-usage: textprep.py decomp [-h] [-r REVERSE] [-v VOCAB_FNAME]
+usage: textprep.py decomp [-h] [-r REVERSE] -v VOCAB_DECOMP [--vocab VOCAB]
                           [-l {ideo_raw,ideo_finest,stroke}] [-i IDC]
                           [-o OUTPUT_FNAME]
                           fname
@@ -39,13 +39,15 @@ optional arguments:
                         whether to reverse process the input file. If True:
                         compose back to normal text file from input fname and
                         vocab fname; Else: do the normal decomposition.
-  -v VOCAB_FNAME, --vocab_fname VOCAB_FNAME
-                        the vocab fname. in decomp process, vocab file will be
-                        generated automatically; in comp process, vocab file
-                        must exist to be read from.
+  -v VOCAB_DECOMP, --vocab_decomp VOCAB_DECOMP
+                        the vocab_decomp fname. in decomp process, vocab file
+                        will be generated automatically; in comp process,
+                        vocab file must exist to be read from.
+  --vocab VOCAB         the vocab fname. not given, generate vocab from fname.
   -l {ideo_raw,ideo_finest,stroke}, --level {ideo_raw,ideo_finest,stroke}
                         to what level should the decomposition be.
   -i IDC, --idc IDC     whether to include structual IDCs in the decomp.
+                        (yes/no)
   -o OUTPUT_FNAME, --output_fname OUTPUT_FNAME
                         the output file name.
 ```
@@ -93,6 +95,15 @@ optional arguments:
                         source output filename.
   --trg_output TRG_OUTPUT
                         target output filename.
+```
+
+## vocab
+```
+usage: vocab.py [-h] [input [input ...]] vocab
+
+positional arguments:
+  input       input fnames.
+  vocab       output vocab fname.
 ```
 
 # examples

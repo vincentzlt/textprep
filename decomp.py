@@ -7,6 +7,7 @@ import re
 import itertools as it
 import json
 import os
+import sys
 
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 DUP = '〾'
@@ -16,6 +17,15 @@ CIRCLE_FNAME = os.path.join(CURRENT_DIR, 'data', 'circle_char.txt')
 SINGLE_FNAME = os.path.join(CURRENT_DIR, 'data', 'single_char.txt')
 RE_squarebrackets = re.compile(r'\[[^[]*\]')
 RE_IDCs = re.compile(r'[⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻]')
+
+
+def _str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise ap.ArgumentTypeError('Boolean value expected.')
 
 
 def _get_d(ds, ideos_set):
@@ -91,69 +101,80 @@ def _chunks(l, n):
 
 
 def main(args):
-    if args.level.startswith('ideo'):
-        IDS_fnames = [IDS_FNAME, CIRCLE_FNAME]
-    elif args.level.startswith('stroke'):
-        IDS_fnames = [IDS_FNAME, CIRCLE_FNAME, SINGLE_FNAME]
-
-    char2ideos = _get_char2ideos(IDS_fnames)
-
-    if args.reverse:
-        vocab = json.loads(open(args.vocab_fname).read())
+    if args.vocab:
+        vocab = cl.Counter(json.loads(open(args.vocab).read()))
     else:
-        if args.idc == 'no':
+        vocab = cl.Counter(
+            w for l in open(args.input) for w in l.strip().split())
+
+    if args.vocab_decomp and args.reverse:
+        vocab2ideos = json.loads(open(args.vocab_decomp).read())
+    else:
+        if args.level.startswith('ideo'):
+            IDS_fnames = [IDS_FNAME, CIRCLE_FNAME]
+        elif args.level.startswith('stroke'):
+            IDS_fnames = [IDS_FNAME, CIRCLE_FNAME, SINGLE_FNAME]
+
+        char2ideos = _get_char2ideos(IDS_fnames)
+
+        if not args.idc:
             for c, d in char2ideos.items():
                 char2ideos[c] = RE_IDCs.sub('', d)
 
         if args.level in ['ideo_finest', 'stroke']:
             _recursive_decomp(char2ideos)
-        vocab = cl.Counter(
-            w for l in open(args.fname) for w in l.strip().split())
 
-    vocab2ideos = _vocab2ideos(vocab, char2ideos)
-    open(args.vocab_fname, 'wt').write((json.dumps(
-        ensure_ascii=False, obj=dict(vocab2ideos), indent=4)))
-    mapping = {v: k
-               for k, v in vocab2ideos.items()
-               } if args.reverse else vocab2ideos
+        vocab2ideos = _vocab2ideos(vocab, char2ideos)
+        js = json.dumps(vocab2ideos, indent=4, ensure_ascii=False)
+        open(args.vocab_decomp, 'wt').write(js)
 
-    with open(args.output_fname, 'wt') as fout:
-        for l in open(args.fname):
-            fout.write(' '.join([mapping.get(w, w)
-                                 for w in l.strip().split()]) + '\n')
+    if not args.reverse:
+        mapping = vocab2ideos
+    else:
+        mapping = {v: k for k, v in vocab2ideos.items()}
+
+    fout = open(args.output, 'wt') if args.output else sys.stdout
+    for l in open(args.input):
+        l_ = ' '.join([mapping.get(w, w) for w in l.strip().split()]) + '\n'
+        fout.write(l_)
+    if fout is not sys.stdout:
+        fout.close()
 
 
 if __name__ == '__main__':
-    parser = ap.ArgumentParser()
+    decomp_parser = ap.ArgumentParser()
 
-    parser.add_argument('fname', type=str, help='the input fname.')
-    parser.add_argument(
-        '-r',
+    decomp_parser.add_argument('input', help='the input fname.')
+    decomp_parser.add_argument('output', nargs='?', help='the output fname.')
+    decomp_parser.add_argument(
         '--reverse',
         default=False,
+        type=_str2bool,
         help=
-        'whether to reverse process the input file. If reverse: compose back to normal text file from input fname and vocab fname. Else: do the normal decomposition.'
-    )
-    parser.add_argument(
-        '-v',
-        '--vocab_fname',
+        'whether to reverse process the input file. If reverse: compose back'
+        ' to normal text file from input fname and vocab fname. Else: do the '
+        'normal decomposition.')
+    decomp_parser.add_argument(
+        '--vocab',
         type=str,
-        required=True,
-        help=
-        'the vocab fname. in decomp process, vocab file will be generated automatically; in comp process, vocab file must exist to be read from.'
-    )
-    parser.add_argument(
-        '-l',
+        help='the vocab fname. not given, generate vocab from fname.')
+    decomp_parser.add_argument(
+        '--vocab_decomp',
+        type=str,
+        help='the vocab_decomp fname. in decomp process, vocab file will be '
+        'generated automatically; in comp process, vocab file must exist to '
+        'be read from.')
+    decomp_parser.add_argument(
         '--level',
+        default='ideo_raw',
         choices=['ideo_raw', 'ideo_finest', 'stroke'],
         help='to what level should the decomposition be.')
-    parser.add_argument(
-        '-i',
+    decomp_parser.add_argument(
         '--idc',
-        default='yes',
+        default=True,
+        type=_str2bool,
         help='whether to include structual IDCs in the decomp. (yes/no)')
-    parser.add_argument(
-        '-o', '--output_fname', type=str, help='the output file name.')
 
-    args = parser.parse_args()
+    args = decomp_parser.parse_args()
+    print(args)
     main(args)
