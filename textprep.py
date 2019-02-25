@@ -24,25 +24,11 @@ def get_parser():
         ' to normal text file from input fname and vocab fname. Else: do the '
         'normal decomposition.')
     decomp_parser.add_argument(
-        '--vocab',
-        type=str,
-        help='the vocab fname. not given, generate vocab from fname.')
-    decomp_parser.add_argument(
         '--vocab_decomp',
         type=str,
         help='the vocab_decomp fname. in decomp process, vocab file will be '
         'generated automatically; in comp process, vocab file must exist to '
         'be read from.')
-    decomp_parser.add_argument(
-        '--level',
-        default='ideo_raw',
-        choices=['ideo_raw', 'ideo_finest', 'stroke'],
-        help='to what level should the decomposition be.')
-    decomp_parser.add_argument(
-        '--idc',
-        default=True,
-        type=_str2bool,
-        help='whether to include structual IDCs in the decomp. (yes/no)')
     decomp_parser.set_defaults(func=decomp)
 
     sample_parser = subparsers.add_parser('sample')
@@ -93,6 +79,19 @@ def get_parser():
     vocab_parser = subparsers.add_parser('vocab')
     vocab_parser.add_argument('input', nargs='*', help='input fnames.')
     vocab_parser.add_argument('vocab', help='output vocab fname.')
+    vocab_parser.add_argument(
+        'vocab_decomp', help='output vocab_decomp fname.')
+    vocab_parser.add_argument(
+        '--level',
+        default='ideo_raw',
+        choices=['ideo_raw', 'ideo_finest', 'stroke'],
+        help='to what level should the decomposition be.')
+    vocab_parser.add_argument(
+        '--idc',
+        default=True,
+        type=_str2bool,
+        help='whether to include structual IDCs in the decomp. (yes/no)')
+
     vocab_parser.set_defaults(func=vocab)
 
     return parser
